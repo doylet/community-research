@@ -11,4 +11,6 @@ def get_reddit_client():
         client_id=os.getenv("REDDIT_CLIENT_ID"),
         client_secret=os.getenv("REDDIT_CLIENT_SECRET"),
         user_agent=os.getenv("REDDIT_USER_AGENT", "community_sentiment_app")
+        username=os.getenv("REDDIT_USERNAME"),  # Optional if you need to perform actions as a user
+        password=os.getenv("REDDIT_PASSWORD")   # Optional if you need to perform actions as a user
     )
