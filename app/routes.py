@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template
-import pandas as pd
+from flask import Blueprint, render_template, request, Response
 from .reddit import get_reddit_client
+import pandas as pd
 
 main = Blueprint('main', __name__)
 
@@ -23,7 +23,7 @@ def search_comments():
         return "Missing thread ID", 400
     
     reddit = get_reddit_client()
-    submission - reddit.submission(id=thread_id)
+    submission = reddit.submission(id=thread_id)
     submission.comments.replace_more(limit=None)
 
     comments_data = []
