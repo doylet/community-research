@@ -9,3 +9,8 @@ def index():
 @main.route('/about')
 def about():
     return render_template('index.html')
+
+@main.route('/redirect')
+def redirect():
+    
+    return render_template('index.html')
