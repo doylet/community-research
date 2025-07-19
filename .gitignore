@@ -1,0 +1,48 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# pyenv
+.python-version
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Flask/Misc
+instance/
+*.db
+*.sqlite
+*.log
+
+# Deployment artifacts
+*.pid
+*.swp
+*.bak
+
+# Render/CI
+render.yaml.lock
+
+# Secrets
+.env.local
+.env.*
+secrets.json
+
+# Pipenv or Poetry (if used)
+Pipfile
+Pipfile.lock
+poetry.lock
