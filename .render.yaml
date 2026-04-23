@@ -8,3 +8,15 @@ services:
     envVars:
       - key: FLASK_ENV
         value: production
+
+  - type: web
+    name: community-research-mcp
+    runtime: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python mcp_server.py"
+    plan: free
+    envVars:
+      - key: MCP_PORT
+        value: "10000"
+      - key: REDDIT_USER_AGENT
+        value: "community_sentiment_app"
