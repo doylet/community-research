@@ -19,6 +19,8 @@ from pydantic import Field
 
 from app.reddit import get_reddit_client
 
+port = int(os.getenv("PORT", os.getenv("MCP_PORT", "8000")))
+
 mcp = FastMCP(
     name="community-research",
     instructions=(
@@ -26,6 +28,9 @@ mcp = FastMCP(
         "Use fetch_thread_comments to retrieve all comments from a specific thread. "
         "Use search_subreddit to find relevant posts in a community."
     ),
+    host="0.0.0.0",
+    port=port,
+    streamable_http_path="/mcp",
 )
 
 
@@ -100,5 +105,4 @@ def search_subreddit(
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("MCP_PORT", "8000"))
-    mcp.run(transport="streamable-http", host="0.0.0.0", port=port, path="/mcp")
+    mcp.run(transport="streamable-http")
