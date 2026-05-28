@@ -17,9 +17,13 @@ from typing import Annotated
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
-from app.reddit import get_reddit_client
+from app.config import ConfigurationError, get_runtime_config, validate_runtime_config
+from app.errors import AppError
+from app.mcp_response import error_response, internal_error_response, success_response
+from app.reddit_service import get_shared_reddit_service
 
-port = int(os.getenv("PORT", os.getenv("MCP_PORT", "8000")))
+runtime_config = get_runtime_config()
+port = int(os.getenv("PORT", os.getenv("MCP_PORT", str(runtime_config.mcp_port))))
 
 mcp = FastMCP(
     name="community-research",
@@ -37,41 +41,23 @@ mcp = FastMCP(
 @mcp.tool()
 def fetch_thread_comments(
     thread_id: Annotated[str, Field(description="Reddit submission ID (the alphanumeric part of the post URL, e.g. 'abc123')")],
-) -> list[dict]:
+    max_comments: Annotated[int, Field(description="Maximum number of comments to include", ge=1)] = runtime_config.max_comments,
+) -> dict:
     """Fetch the original post plus all comments from a Reddit thread.
 
     Returns a list of dicts with keys: type, author, text, score, id, parent_id, created_utc.
     """
-    reddit = get_reddit_client()
-    submission = reddit.submission(id=thread_id)
-    submission.comments.replace_more(limit=None)
-
-    results: list[dict] = []
-
-    results.append({
-        "type": "post",
-        "author": str(submission.author),
-        "text": submission.title + ("\n\n" + submission.selftext if submission.selftext else ""),
-        "score": submission.score,
-        "id": submission.id,
-        "parent_id": None,
-        "created_utc": submission.created_utc,
-        "url": f"https://reddit.com{submission.permalink}",
-    })
-
-    for comment in submission.comments.list():
-        results.append({
-            "type": "comment",
-            "author": str(comment.author),
-            "text": comment.body,
-            "score": comment.score,
-            "id": comment.id,
-            "parent_id": comment.parent_id,
-            "created_utc": comment.created_utc,
-            "url": f"https://reddit.com{comment.permalink}",
-        })
-
-    return results
+    try:
+        result = get_shared_reddit_service().fetch_thread_records(
+            thread_id=thread_id,
+            max_comments=max_comments,
+            include_url=True,
+        )
+        return success_response(result.data, retries=result.retries)
+    except AppError as exc:
+        return error_response(exc)
+    except Exception:
+        return internal_error_response()
 
 
 @mcp.tool()
@@ -80,29 +66,29 @@ def search_subreddit(
     query: Annotated[str, Field(description="Search query string")],
     limit: Annotated[int, Field(description="Maximum number of posts to return (1-100)", ge=1, le=100)] = 25,
     sort: Annotated[str, Field(description="Sort order: relevance, hot, top, new, comments")] = "relevance",
-) -> list[dict]:
+) -> dict:
     """Search for posts in a subreddit matching a query.
 
     Returns a list of dicts with keys: id, title, author, score, url, num_comments, created_utc, selftext.
     """
-    reddit = get_reddit_client()
-    subreddit_obj = reddit.subreddit(subreddit)
-
-    results: list[dict] = []
-    for submission in subreddit_obj.search(query, sort=sort, limit=limit):
-        results.append({
-            "id": submission.id,
-            "title": submission.title,
-            "author": str(submission.author),
-            "score": submission.score,
-            "url": f"https://reddit.com{submission.permalink}",
-            "num_comments": submission.num_comments,
-            "created_utc": submission.created_utc,
-            "selftext": submission.selftext[:500] if submission.selftext else "",
-        })
-
-    return results
+    try:
+        result = get_shared_reddit_service().search_posts(
+            subreddit=subreddit,
+            query=query,
+            limit=limit,
+            sort=sort,
+        )
+        return success_response(result.data, retries=result.retries)
+    except AppError as exc:
+        return error_response(exc)
+    except Exception:
+        return internal_error_response()
 
 
 if __name__ == "__main__":
+    try:
+        validate_runtime_config(runtime_config)
+    except ConfigurationError as exc:
+        raise SystemExit(f"Startup configuration error: {exc}") from exc
+
     mcp.run(transport="streamable-http")

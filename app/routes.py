@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, Response
-from .reddit import get_reddit_client
+from .reddit_service import get_shared_reddit_service
 import pandas as pd
 
 main = Blueprint('main', __name__)
@@ -21,37 +21,16 @@ def search_comments():
     thread_id = request.args.get("id")
     if not thread_id:
         return "Missing thread ID", 400
-    
-    reddit = get_reddit_client()
-    submission = reddit.submission(id=thread_id)
-    submission.comments.replace_more(limit=None)
 
-    comments_data = []
+    result = get_shared_reddit_service().fetch_thread_records(
+        thread_id=thread_id,
+        include_url=False,
+    )
+    comments_data = result.data
 
-        # Add thread metadata
-    comments_data.append({
-        "type": "post",
-        "author": str(submission.author),
-        "text": submission.title + "\n\n" + submission.selftext,
-        "score": submission.score,
-        "id": submission.id,
-        "parent_id": None,
-        "created_utc": submission.created_utc
-    })
-
-    # Add all top-level + nested comments
-    for comment in submission.comments.list():
-        comments_data.append({
-            "type": "comment",
-            "author": str(comment.author),
-            "text": comment.body,
-            "score": comment.score,
-            "id": comment.id,
-            "parent_id": comment.parent_id,
-            "created_utc": comment.created_utc
-        })
-
-    df = pd.DataFrame(comments_data)
+    # Preserve legacy CSV column order for downstream compatibility.
+    columns = ["type", "author", "text", "score", "id", "parent_id", "created_utc"]
+    df = pd.DataFrame(comments_data, columns=columns)
 
     # Return as downloadable CSV
     csv = df.to_csv(index=False)
