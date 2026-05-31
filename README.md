@@ -2,6 +2,8 @@
 
 Backend service for Reddit community data retrieval with both Flask routes and an MCP server endpoint.
 
+The MCP process now calls the API service over HTTP. Reddit credentials stay in the API service environment only.
+
 ## Environment Variables
 
 Required:
@@ -19,7 +21,13 @@ Optional:
 - MCP_MAX_COMMENTS (default: 2000)
 - MCP_MAX_SEARCH_LIMIT (default: 100)
 
-Startup validates required credentials and fails with a sanitized error when missing.
+MCP-specific:
+- COMMUNITY_RESEARCH_API_URL (required for MCP process)
+- MCP_API_TIMEOUT_SECONDS (default: REDDIT_TIMEOUT_SECONDS)
+- MCP_API_RETRY_ATTEMPTS (default: MCP_RETRY_ATTEMPTS)
+- MCP_API_RETRY_BACKOFF_SECONDS (default: MCP_RETRY_BACKOFF_SECONDS)
+
+Startup validates required Reddit credentials in the API service.
 
 ## Running MCP Server
 
@@ -27,6 +35,33 @@ python mcp_server.py
 
 Transport path:
 - streamable-http on /mcp
+
+## Claude Desktop (Production)
+
+To connect Claude Desktop to the production MCP endpoint, deploy the Render service named community-research-mcp and use an MCP HTTP bridge.
+
+Production MCP URL:
+- https://community-research-mcp.onrender.com/mcp
+
+macOS Claude Desktop config file:
+- ~/Library/Application Support/Claude/claude_desktop_config.json
+
+Example config:
+
+{
+  "mcpServers": {
+    "community-research-prod": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://community-research-mcp.onrender.com/mcp"
+      ]
+    }
+  }
+}
+
+After saving config, fully quit and reopen Claude Desktop.
 
 ## MCP Response Contract
 
