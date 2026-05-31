@@ -50,7 +50,7 @@ Example config:
 
 {
   "mcpServers": {
-    "community-research-prod": {
+    "fetch-reddit": {
       "command": "npx",
       "args": [
         "-y",
@@ -60,6 +60,14 @@ Example config:
     }
   }
 }
+
+Install helper script (macOS):
+
+./install-claude-fetch-reddit.sh
+
+Optional custom MCP URL:
+
+./install-claude-fetch-reddit.sh https://community-research-mcp.onrender.com/mcp
 
 After saving config, fully quit and reopen Claude Desktop.
 
