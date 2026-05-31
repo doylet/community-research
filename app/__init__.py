@@ -1,11 +1,7 @@
 import os
 from flask import Flask
 
-from .config import get_runtime_config, validate_runtime_config
-
 def create_app():
-
-    validate_runtime_config(get_runtime_config())
 
     root_dir = os.path.abspath(os.path.dirname(__file__))
     base_dir = os.path.dirname(root_dir)

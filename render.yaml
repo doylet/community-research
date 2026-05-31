@@ -19,7 +19,7 @@ services:
     startCommand: python mcp_server.py
     envVars:
       - key: COMMUNITY_RESEARCH_API_URL
-        value: https://community-research-api.onrender.com
+        value: https://community-research.onrender.com
       - key: MCP_API_TIMEOUT_SECONDS
         value: 20
       - key: MCP_API_RETRY_ATTEMPTS
