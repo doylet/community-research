@@ -1,4 +1,6 @@
-from flask import Blueprint, render_template, request, Response, jsonify
+import os
+
+from flask import Blueprint, request, Response, jsonify, redirect as flask_redirect
 import pandas as pd
 
 from .errors import AppError, ErrorCode
@@ -7,6 +9,13 @@ from .reddit import get_reddit_client
 from .reddit_service import get_shared_reddit_service
 
 main = Blueprint('main', __name__)
+
+FRONTEND_URL = os.getenv("COMMUNITY_RESEARCH_FRONTEND_URL", "https://community-research-frontend.onrender.com").rstrip("/")
+
+
+def _frontend_redirect(path: str = "/"):
+    target = f"{FRONTEND_URL}{path}"
+    return flask_redirect(target, code=302)
 
 
 def _status_code_for_error(error: AppError) -> int:
@@ -23,17 +32,17 @@ def _status_code_for_error(error: AppError) -> int:
 
 @main.route('/')
 def index():
-    return render_template('index.html')
+    return _frontend_redirect("/")
 
 
 @main.route('/about')
 def about():
-    return render_template('index.html')
+    return _frontend_redirect("/about")
 
 
 @main.route('/redirect')
-def redirect():
-    return render_template('index.html')
+def redirect_to_frontend():
+    return _frontend_redirect("/")
 
 
 @main.route('/health')
