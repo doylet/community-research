@@ -29,6 +29,11 @@ MCP-specific:
 
 Startup validates required Reddit credentials in the API service.
 
+## Health Endpoints
+
+- `/health`: lightweight API process health (no Reddit API call)
+- `/health/reddit`: explicit Reddit connectivity diagnostics (calls Reddit API)
+
 ## Running MCP Server
 
 python mcp_server.py

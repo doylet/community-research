@@ -26,7 +26,7 @@ def map_reddit_exception(exc: Exception) -> AppError:
         return exc
 
     if isinstance(exc, prawcore.exceptions.TooManyRequests):
-        return AppError(ErrorCode.UPSTREAM_RATE_LIMIT, "Reddit API rate limit exceeded", retryable=True)
+        return AppError(ErrorCode.UPSTREAM_RATE_LIMIT, "Reddit API rate limit exceeded")
 
     if isinstance(exc, (prawcore.exceptions.RequestException, prawcore.exceptions.ResponseException, prawcore.exceptions.ServerError)):
         return AppError(ErrorCode.UPSTREAM_UNAVAILABLE, "Reddit API is temporarily unavailable", retryable=True)

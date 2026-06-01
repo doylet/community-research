@@ -47,7 +47,16 @@ def redirect_to_frontend():
 
 @main.route('/health')
 def health_check():
-    """Health check endpoint to verify Reddit API connectivity."""
+    """Lightweight process health check that does not call upstream services."""
+    return jsonify({
+        "status": "healthy",
+        "service": "community-research-api",
+    })
+
+
+@main.route('/health/reddit')
+def health_check_reddit():
+    """Diagnostic health endpoint to verify Reddit API connectivity."""
     try:
         reddit = get_reddit_client()
         test_sub = reddit.subreddit('test')
