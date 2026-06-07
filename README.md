@@ -24,7 +24,7 @@ Optional:
 MCP-specific:
 - COMMUNITY_RESEARCH_API_URL (required for MCP process)
 - MCP_API_TIMEOUT_SECONDS (default: REDDIT_TIMEOUT_SECONDS)
-- MCP_API_RETRY_ATTEMPTS (default: MCP_RETRY_ATTEMPTS)
+- MCP_API_RETRY_ATTEMPTS (default: 1)
 - MCP_API_RETRY_BACKOFF_SECONDS (default: MCP_RETRY_BACKOFF_SECONDS)
 
 Startup validates required Reddit credentials in the API service.

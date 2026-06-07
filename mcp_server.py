@@ -27,7 +27,7 @@ runtime_config = get_runtime_config()
 port = int(os.getenv("PORT", os.getenv("MCP_PORT", str(runtime_config.mcp_port))))
 api_base_url = os.getenv("COMMUNITY_RESEARCH_API_URL", "https://community-research.onrender.com").rstrip("/")
 api_timeout_seconds = int(os.getenv("MCP_API_TIMEOUT_SECONDS", str(runtime_config.upstream_timeout_seconds)))
-api_retry_attempts = max(1, int(os.getenv("MCP_API_RETRY_ATTEMPTS", str(runtime_config.retry_attempts))))
+api_retry_attempts = max(1, int(os.getenv("MCP_API_RETRY_ATTEMPTS", "1")))
 api_retry_backoff_seconds = float(os.getenv("MCP_API_RETRY_BACKOFF_SECONDS", str(runtime_config.retry_backoff_seconds)))
 
 mcp = FastMCP(
