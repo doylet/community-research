@@ -48,6 +48,10 @@ def _status_error(status_code: int) -> AppError:
         return AppError(ErrorCode.INVALID_INPUT, "Invalid request parameters")
     if status_code == 401:
         return AppError(ErrorCode.AUTH_CONFIGURATION_ERROR, "Upstream service authentication is invalid")
+    if status_code == 403:
+        return AppError(ErrorCode.FORBIDDEN, "Requested Reddit resource is forbidden")
+    if status_code == 404:
+        return AppError(ErrorCode.NOT_FOUND, "Requested Reddit resource was not found")
     if status_code == 429:
         return AppError(ErrorCode.UPSTREAM_RATE_LIMIT, "Upstream service rate limit exceeded", retryable=True)
     if status_code >= 500:

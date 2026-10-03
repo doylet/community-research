@@ -1,3 +1,5 @@
+# Service names must match the Render dashboard; hostnames differ.
+# See deploy/services.yaml for the name -> hostname mapping.
 services:
   - type: web
     name: community-research-api
@@ -11,6 +13,8 @@ services:
         sync: false
       - key: REDDIT_USER_AGENT
         sync: false
+      - key: COMMUNITY_RESEARCH_FRONTEND_URL
+        value: https://community-research-frontend.onrender.com
 
   - type: web
     name: community-research-mcp
@@ -23,16 +27,16 @@ services:
       - key: MCP_API_TIMEOUT_SECONDS
         value: 20
       - key: MCP_API_RETRY_ATTEMPTS
-        value: 3
+        value: 1
       - key: MCP_API_RETRY_BACKOFF_SECONDS
         value: 0.5
 
   - type: web
-    name: community-research-frontend
+    name: community-research
     runtime: node
     rootDir: frontend
     buildCommand: npm install && npm run build
     startCommand: npm start -- -H 0.0.0.0 -p $PORT
     envVars:
-      - key: NEXT_PUBLIC_API_URL
-        value: https://community-research-api.onrender.com
+      - key: COMMUNITY_RESEARCH_API_URL
+        value: https://community-research.onrender.com

@@ -39,6 +39,7 @@ render.yaml.lock
 # Secrets
 .env.local
 .env.*
+!.env.example
 secrets.json
 
 # Pipenv or Poetry (if used)

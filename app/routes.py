@@ -1,3 +1,4 @@
+import logging
 import os
 
 from flask import Blueprint, request, Response, jsonify, redirect as flask_redirect
@@ -9,6 +10,7 @@ from .reddit import get_reddit_client
 from .reddit_service import get_shared_reddit_service
 
 main = Blueprint('main', __name__)
+logger = logging.getLogger(__name__)
 
 FRONTEND_URL = os.getenv("COMMUNITY_RESEARCH_FRONTEND_URL", "https://community-research-frontend.onrender.com").rstrip("/")
 
@@ -21,6 +23,10 @@ def _frontend_redirect(path: str = "/"):
 def _status_code_for_error(error: AppError) -> int:
     if error.code == ErrorCode.INVALID_INPUT:
         return 400
+    if error.code == ErrorCode.NOT_FOUND:
+        return 404
+    if error.code == ErrorCode.FORBIDDEN:
+        return 403
     if error.code == ErrorCode.AUTH_CONFIGURATION_ERROR:
         return 401
     if error.code == ErrorCode.UPSTREAM_RATE_LIMIT:
@@ -150,6 +156,16 @@ def api_search_posts():
         return jsonify(internal_error_response()), 500
 
 
+CSV_ERROR_MESSAGES = {
+    ErrorCode.INVALID_INPUT: "Invalid Reddit thread ID. Please check the thread ID and try again.",
+    ErrorCode.NOT_FOUND: "Reddit thread not found. Please verify the thread ID.",
+    ErrorCode.FORBIDDEN: "Access forbidden. The subreddit may be private or restricted.",
+    ErrorCode.AUTH_CONFIGURATION_ERROR: "Reddit API authentication error. Please check your API credentials.",
+    ErrorCode.UPSTREAM_RATE_LIMIT: "Rate limit exceeded. Please try again later.",
+    ErrorCode.UPSTREAM_UNAVAILABLE: "Reddit is temporarily unavailable. Please try again later.",
+}
+
+
 @main.route('/search')
 def search_comments():
     thread_id = request.args.get("id")
@@ -173,18 +189,9 @@ def search_comments():
             mimetype="text/csv",
             headers={"Content-disposition": f"attachment; filename=thread_{thread_id}.csv"},
         )
-    except Exception as e:
-        print(f"Error processing thread {thread_id}: {str(e)}")
-
-        error_message = str(e).lower()
-        if "invalid submission" in error_message or "submission does not exist" in error_message:
-            return "Invalid Reddit thread ID. Please check the thread ID and try again.", 404
-        if "unauthorized_client" in error_message:
-            return "Reddit API authentication error. Please check your API credentials.", 401
-        if "forbidden" in error_message or "access denied" in error_message:
-            return "Access forbidden. The subreddit may be private or restricted.", 403
-        if "not found" in error_message or "404" in error_message:
-            return "Reddit thread not found. Please verify the thread ID.", 404
-        if "rate limit" in error_message:
-            return "Rate limit exceeded. Please try again later.", 429
-        return f"Error processing Reddit thread: {str(e)}", 500
+    except AppError as exc:
+        message = CSV_ERROR_MESSAGES.get(exc.code, "Error processing Reddit thread. Please try again later.")
+        return message, _status_code_for_error(exc)
+    except Exception:
+        logger.exception("Unexpected error exporting thread %s", thread_id)
+        return "Error processing Reddit thread. Please try again later.", 500

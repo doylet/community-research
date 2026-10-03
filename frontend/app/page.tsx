@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "@/lib/endpoints"
+
 type SearchParams = {
   subreddit?: string | string[]
   query?: string | string[]
@@ -22,7 +24,6 @@ type SearchResponse = {
   error: { message: string } | null
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://community-research.onrender.com"
 const VALID_SORTS = new Set(["relevance", "hot", "top", "new", "comments"])
 
 function getStringParam(value: string | string[] | undefined, fallback: string): string {
@@ -53,7 +54,7 @@ async function searchPosts(subreddit: string, query: string, sort: string, limit
   })
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/search_posts?${params.toString()}`, {
+    const response = await fetch(`${getApiBaseUrl()}/api/search_posts?${params.toString()}`, {
       cache: "no-store",
     })
 
@@ -156,7 +157,7 @@ export default async function HomePage({
       </section>
 
       <section className="mb-6 flex flex-wrap gap-3 text-sm text-slate-400">
-        <span className="rounded-full border border-slate-700 px-3 py-1">Source: {API_BASE_URL}</span>
+        <span className="rounded-full border border-slate-700 px-3 py-1">Source: {getApiBaseUrl()}</span>
         <span className="rounded-full border border-slate-700 px-3 py-1">Results: {posts.length}</span>
         <span className="rounded-full border border-slate-700 px-3 py-1">Sort: {sort}</span>
       </section>
@@ -195,7 +196,7 @@ export default async function HomePage({
                 Open on Reddit
               </a>
               <a
-                href={`${API_BASE_URL}/api/thread?thread_id=${post.id}`}
+                href={`${getApiBaseUrl()}/api/thread?thread_id=${post.id}`}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-md border border-slate-700 px-3 py-1 text-slate-200 hover:bg-slate-800"
@@ -203,7 +204,7 @@ export default async function HomePage({
                 Inspect Thread JSON
               </a>
               <a
-                href={`${API_BASE_URL}/search?id=${post.id}`}
+                href={`${getApiBaseUrl()}/search?id=${post.id}`}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-md border border-slate-700 px-3 py-1 text-slate-200 hover:bg-slate-800"

@@ -1,0 +1,10 @@
+# Render service dashboard names -> public hostnames.
+#
+# Render keeps a service's original hostname when it is renamed, so these do not
+# line up (the API was first created as "community-research"). render.yaml must
+# use the dashboard names (Blueprints match services by name); code and docs must
+# use the hostnames. If you rename a service in the dashboard, update this file;
+# tests/test_service_endpoints.py keeps render.yaml and the code in step with it.
+community-research-api: community-research.onrender.com
+community-research: community-research-frontend.onrender.com
+community-research-mcp: community-research-mcp.onrender.com

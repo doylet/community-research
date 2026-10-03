@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Callable
 
+from praw.models import MoreComments
+
 from .config import RuntimeConfig, get_runtime_config, validate_runtime_config
 from .errors import AppError, ErrorCode, map_reddit_exception
 from .reddit import get_reddit_client
@@ -28,9 +30,14 @@ class RedditService:
         self._config = config or get_runtime_config()
         validate_runtime_config(self._config)
         self._reddit_client_factory = reddit_client_factory
+        self._reddit = None
 
     def _client(self):
-        return self._reddit_client_factory(self._config)
+        # One client per service instance so PRAW reuses its OAuth token across
+        # requests. Safe under gunicorn sync workers (one request per process at a time).
+        if self._reddit is None:
+            self._reddit = self._reddit_client_factory(self._config)
+        return self._reddit
 
     def _run_with_retry(self, operation: Callable[[], list[dict]]) -> ServiceResult:
         retries = 0
@@ -47,6 +54,13 @@ class RedditService:
 
         raise AppError(ErrorCode.INTERNAL_ERROR, "Retry loop exited unexpectedly")
 
+    def _replace_more_limit(self, comment_forest, comment_limit: int) -> int | None:
+        loaded = sum(1 for item in comment_forest.list() if not isinstance(item, MoreComments))
+        if loaded >= comment_limit:
+            # Already have enough comments: strip placeholders without network calls.
+            return 0
+        return self._config.replace_more_limit
+
     def fetch_thread_records(self, thread_id: str, max_comments: int | None = None, include_url: bool = True) -> ServiceResult:
         if not THREAD_ID_PATTERN.match(thread_id):
             raise AppError(ErrorCode.INVALID_INPUT, "thread_id must be an alphanumeric Reddit submission id")
@@ -58,7 +72,7 @@ class RedditService:
         def operation() -> list[dict]:
             reddit = self._client()
             submission = reddit.submission(id=thread_id)
-            submission.comments.replace_more(limit=None)
+            submission.comments.replace_more(limit=self._replace_more_limit(submission.comments, comment_limit))
 
             results: list[dict] = []
             post_row = {
