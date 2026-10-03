@@ -150,4 +150,4 @@ Catch `AppError` and use `_status_code_for_error` with a fixed message for each 
 
 ## Open Questions
 
-- What is the frontend service's current `NEXT_PUBLIC_API_URL`? If it is the dead `community-research-api.onrender.com` host, the dashboard search is broken in production today. The code fallback is correct, so it only works if the variable is unset. This hasn't been verified. Either way, the fix in step 2 is the same.
+- ~~What is the frontend service's current `NEXT_PUBLIC_API_URL`?~~ Resolved on 2026-10-04: it is `https://community-research.onrender.com`, which is correct. The service was created manually, not from `render.yaml`, so production was never broken. Setting `COMMUNITY_RESEARCH_API_URL` and removing `NEXT_PUBLIC_API_URL` are both safe in either order and need no deploy coordination, because the running build already has the URL inlined and every fallback resolves to the same host.
