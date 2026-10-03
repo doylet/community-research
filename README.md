@@ -4,6 +4,31 @@ Backend service for Reddit community data retrieval with both Flask routes and a
 
 The MCP process now calls the API service over HTTP. Reddit credentials stay in the API service environment only.
 
+## Local Setup
+
+Python is pinned in `.python-version` (3.11); Render reads the same file. Dependencies are fully locked (exact versions).
+
+```bash
+uv venv                                          # creates .venv using .python-version
+uv pip sync requirements.txt requirements-dev.txt
+source .venv/bin/activate
+cp .env.example .env                             # then fill in Reddit credentials
+```
+
+Without uv: `python3.11 -m venv .venv && .venv/bin/pip install -r requirements.txt -r requirements-dev.txt`.
+
+### Changing dependencies
+
+Edit `requirements.in` (runtime) or `requirements-dev.in` (tests/tooling), never the `.txt` lock files directly, then regenerate and commit both:
+
+```bash
+uv pip compile requirements.in -o requirements.txt --python-version 3.11
+uv pip compile requirements-dev.in -o requirements-dev.txt --python-version 3.11
+uv pip sync requirements.txt requirements-dev.txt
+```
+
+Add `--upgrade-package <name>` to bump a single package; existing pins are otherwise preserved.
+
 ## Environment Variables
 
 Required:

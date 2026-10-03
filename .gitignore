@@ -14,8 +14,7 @@ env/
 venv/
 ENV/
 
-# pyenv
-.python-version
+# pyenv: .python-version is committed on purpose (pins the shared Python version)
 
 # VS Code
 .vscode/

@@ -1,0 +1,11 @@
+# Direct runtime dependencies. Edit this file, then regenerate the lock:
+#   uv pip compile requirements.in -o requirements.txt
+Flask>=3.1.1
+gunicorn>=23.0.0
+mcp>=1.27.0
+pandas>=2.3.1
+praw>=7.8.1
+prawcore>=2.4.0
+pydantic>=2
+python-dotenv>=1.1.1
+requests>=2.32.4
