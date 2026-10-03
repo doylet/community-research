@@ -1,5 +1,7 @@
 import Link from "next/link"
 
+import { MCP_ENDPOINT_URL } from "@/lib/endpoints"
+
 export function Navigation() {
   return (
     <nav className="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur">
@@ -17,7 +19,7 @@ export function Navigation() {
               About
             </Link>
             <a
-              href="https://community-research-mcp.onrender.com/mcp"
+              href={MCP_ENDPOINT_URL}
               className="text-slate-300 hover:text-white transition-colors"
               target="_blank"
               rel="noreferrer"

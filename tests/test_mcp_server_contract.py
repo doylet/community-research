@@ -46,3 +46,27 @@ def test_fetch_thread_comments_invalid_input_error(monkeypatch):
     assert response["data"] is None
     assert response["error"]["code"] == ErrorCode.INVALID_INPUT
     assert isinstance(response["request_id"], str)
+
+
+class FakeHttpResponse:
+    def __init__(self, status_code, payload):
+        self.status_code = status_code
+        self._payload = payload
+
+    def json(self):
+        return self._payload
+
+
+def test_fetch_thread_comments_passes_not_found_through(monkeypatch):
+    payload = {"success": False, "error": {"code": ErrorCode.NOT_FOUND, "message": "Reddit resource was not found"}}
+    monkeypatch.setattr(mcp_server.requests, "get", lambda *a, **k: FakeHttpResponse(404, payload))
+
+    response = mcp_server.fetch_thread_comments("abc123")
+
+    assert response["success"] is False
+    assert response["error"]["code"] == ErrorCode.NOT_FOUND
+
+
+def test_status_error_maps_404_and_403_without_body():
+    assert mcp_server._status_error(404).code == ErrorCode.NOT_FOUND
+    assert mcp_server._status_error(403).code == ErrorCode.FORBIDDEN

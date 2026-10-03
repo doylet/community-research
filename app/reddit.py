@@ -1,9 +1,6 @@
-from dotenv import load_dotenv
 import praw
 
 from .config import RuntimeConfig, get_runtime_config
-
-load_dotenv()
 
 
 def get_reddit_client(config: RuntimeConfig | None = None):

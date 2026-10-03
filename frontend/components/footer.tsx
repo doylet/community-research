@@ -1,5 +1,7 @@
 import Link from "next/link"
 
+import { getApiBaseUrl, MCP_ENDPOINT_URL } from "@/lib/endpoints"
+
 export function Footer() {
   return (
     <footer className="border-t border-slate-800 bg-slate-950 py-12 text-slate-300">
@@ -27,7 +29,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://community-research.onrender.com/health"
+                  href={`${getApiBaseUrl()}/health`}
                   className="transition-colors hover:text-white"
                   target="_blank"
                   rel="noreferrer"
@@ -43,7 +45,7 @@ export function Footer() {
             <ul className="space-y-2 text-slate-400">
               <li>
                 <a
-                  href="https://community-research-mcp.onrender.com/mcp"
+                  href={MCP_ENDPOINT_URL}
                   className="transition-colors hover:text-white"
                   target="_blank"
                   rel="noreferrer"
@@ -63,7 +65,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://community-research.onrender.com/test"
+                  href={`${getApiBaseUrl()}/test`}
                   className="transition-colors hover:text-white"
                   target="_blank"
                   rel="noreferrer"
