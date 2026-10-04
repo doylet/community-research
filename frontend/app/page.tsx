@@ -1,4 +1,7 @@
+import { ApiNotificationPanel, EmptyResultsNotice } from "@/components/api-notification"
+import { classifyApiFailure, SEARCH_TIMEOUT_MS, type ApiNotification } from "@/lib/api-errors"
 import { getApiBaseUrl } from "@/lib/endpoints"
+import { cn } from "@/lib/utils"
 
 type SearchParams = {
   subreddit?: string | string[]
@@ -20,8 +23,9 @@ type RedditPost = {
 
 type SearchResponse = {
   success: boolean
+  request_id: string
   data: RedditPost[] | null
-  error: { message: string } | null
+  error: { code: string; message: string } | null
 }
 
 const VALID_SORTS = new Set(["relevance", "hot", "top", "new", "comments"])
@@ -45,31 +49,70 @@ function formatUtc(createdUtc: number): string {
   return new Date(createdUtc * 1000).toLocaleString()
 }
 
-async function searchPosts(subreddit: string, query: string, sort: string, limit: number): Promise<{ posts: RedditPost[]; error: string | null }> {
-  const params = new URLSearchParams({
+function isTimeout(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "TimeoutError"
+}
+
+const FORM_FIELDS =["subreddit", "query", "sort", "limit"] as const
+type FormField = (typeof FORM_FIELDS)[number]
+
+function searchQueryString(subreddit: string, query: string, sort: string, limit: number): string {
+  return new URLSearchParams({
     subreddit,
     query,
     sort,
     limit: String(limit),
-  })
+  }).toString()
+}
 
+// The API's INVALID_INPUT messages start with the offending parameter name.
+function invalidFieldFor(notification: ApiNotification | null): FormField | null {
+  if (notification?.code !== "INVALID_INPUT" || !notification.message) {
+    return null
+  }
+  const firstWord = notification.message.split(/\s/, 1)[0]
+  return FORM_FIELDS.find((field) => field === firstWord) ?? null
+}
+
+async function searchPosts(
+  subreddit: string,
+  query: string,
+  sort: string,
+  limit: number,
+): Promise<{ posts: RedditPost[]; notification: ApiNotification | null }> {
+  const apiBaseUrl = getApiBaseUrl()
+  const context = { subreddit, apiBaseUrl }
+
+  let response: Response
   try {
-    const response = await fetch(`${getApiBaseUrl()}/api/search_posts?${params.toString()}`, {
+    response = await fetch(`${apiBaseUrl}/api/search_posts?${searchQueryString(subreddit, query, sort, limit)}`, {
       cache: "no-store",
+      signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
     })
+  } catch (error) {
+    const type = isTimeout(error) ? "timeout" : "network"
+    return { posts: [], notification: classifyApiFailure({ type }, context) }
+  }
 
-    if (!response.ok) {
-      return { posts: [], error: `Search failed with status ${response.status}.` }
+  let payload: unknown = null
+  try {
+    payload = await response.json()
+  } catch (error) {
+    // The timeout also covers reading the body.
+    if (isTimeout(error)) {
+      return { posts: [], notification: classifyApiFailure({ type: "timeout" }, context) }
     }
+    // Otherwise a non-JSON body (e.g. a gateway HTML page); classified by status below.
+  }
 
-    const payload = (await response.json()) as SearchResponse
-    if (!payload.success || !payload.data) {
-      return { posts: [], error: payload.error?.message ?? "Search failed." }
-    }
+  const envelope = payload as SearchResponse | null
+  if (response.ok && envelope?.success && Array.isArray(envelope.data)) {
+    return { posts: envelope.data, notification: null }
+  }
 
-    return { posts: payload.data, error: null }
-  } catch {
-    return { posts: [], error: "Could not reach the API service." }
+  return {
+    posts: [],
+    notification: classifyApiFailure({ type: "http", status: response.status, body: payload }, context),
   }
 }
 
@@ -85,7 +128,15 @@ export default async function HomePage({
   const sort = VALID_SORTS.has(requestedSort) ? requestedSort : "top"
   const limit = clampLimit(resolvedParams.limit)
 
-  const { posts, error } = await searchPosts(subreddit, query, sort, limit)
+  const { posts, notification } = await searchPosts(subreddit, query, sort, limit)
+  const invalidField = invalidFieldFor(notification)
+  const fieldProps = (field: FormField) => ({
+    "aria-invalid": invalidField === field || undefined,
+    className: cn(
+      "w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:border-cyan-400 focus:outline-none",
+      invalidField === field && "border-amber-400",
+    ),
+  })
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
@@ -105,7 +156,7 @@ export default async function HomePage({
             <input
               name="subreddit"
               defaultValue={subreddit}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:border-cyan-400 focus:outline-none"
+              {...fieldProps("subreddit")}
               placeholder="python"
             />
           </label>
@@ -115,7 +166,7 @@ export default async function HomePage({
             <input
               name="query"
               defaultValue={query}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:border-cyan-400 focus:outline-none"
+              {...fieldProps("query")}
               placeholder="llm prompt engineering"
             />
           </label>
@@ -125,7 +176,7 @@ export default async function HomePage({
             <select
               name="sort"
               defaultValue={sort}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:border-cyan-400 focus:outline-none"
+              {...fieldProps("sort")}
             >
               <option value="relevance">relevance</option>
               <option value="hot">hot</option>
@@ -143,7 +194,7 @@ export default async function HomePage({
               min={1}
               max={100}
               defaultValue={limit}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:border-cyan-400 focus:outline-none"
+              {...fieldProps("limit")}
             />
           </label>
 
@@ -162,15 +213,14 @@ export default async function HomePage({
         <span className="rounded-full border border-slate-700 px-3 py-1">Sort: {sort}</span>
       </section>
 
-      {error ? (
-        <section className="rounded-2xl border border-rose-500/40 bg-rose-950/30 p-6 text-rose-100">{error}</section>
+      {notification ? (
+        <ApiNotificationPanel
+          notification={notification}
+          retryHref={`?${searchQueryString(subreddit, query, sort, limit)}`}
+        />
       ) : null}
 
-      {!error && posts.length === 0 ? (
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 text-slate-300">
-          No posts found. Try a broader query or switch the sort mode.
-        </section>
-      ) : null}
+      {!notification && posts.length === 0 ? <EmptyResultsNotice subreddit={subreddit} query={query} /> : null}
 
       <section className="space-y-4">
         {posts.map((post) => (
