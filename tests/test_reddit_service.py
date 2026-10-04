@@ -1,6 +1,6 @@
 import pytest
 from praw.models import MoreComments
-from prawcore.exceptions import Forbidden, NotFound, ServerError
+from prawcore.exceptions import Forbidden, NotFound, Redirect, ServerError
 
 from app.config import RuntimeConfig
 from app.errors import AppError, ErrorCode
@@ -194,6 +194,31 @@ def test_server_error_is_still_retryable():
 
     assert exc_info.value.code == ErrorCode.UPSTREAM_UNAVAILABLE
     assert attempts["count"] == 2
+
+
+def test_nonexistent_subreddit_redirect_is_not_found_and_not_retried():
+    attempts = {"count": 0}
+    redirect_response = FakeResponse(302)
+    redirect_response.headers = {"location": "https://www.reddit.com/subreddits/search.json?q=nosuchsub"}
+
+    class FakeSubreddit:
+        def search(self, query, sort, limit):
+            attempts["count"] += 1
+            raise Redirect(redirect_response)
+
+    class FakeClientRedirects:
+        def subreddit(self, name):
+            return FakeSubreddit()
+
+    service = RedditService(config=build_config(retry_attempts=3), reddit_client_factory=lambda cfg: FakeClientRedirects())
+
+    with pytest.raises(AppError) as exc_info:
+        service.search_posts(subreddit="nosuchsub", query="hello", limit=5)
+
+    assert exc_info.value.code == ErrorCode.NOT_FOUND
+    assert exc_info.value.message == "Subreddit was not found"
+    assert exc_info.value.retryable is False
+    assert attempts["count"] == 1
 
 
 def test_client_is_built_lazily_and_reused():
