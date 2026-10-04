@@ -35,6 +35,10 @@ def map_reddit_exception(exc: Exception) -> AppError:
     if isinstance(exc, prawcore.exceptions.NotFound):
         return AppError(ErrorCode.NOT_FOUND, "Reddit resource was not found")
 
+    # Reddit redirects a lookup of a nonexistent subreddit to /subreddits/search.
+    if isinstance(exc, prawcore.exceptions.Redirect):
+        return AppError(ErrorCode.NOT_FOUND, "Subreddit was not found")
+
     if isinstance(exc, prawcore.exceptions.Forbidden):
         return AppError(ErrorCode.FORBIDDEN, "Reddit resource is private, quarantined, or otherwise forbidden")
 

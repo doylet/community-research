@@ -2,14 +2,17 @@
 
 ## Purpose
 Limits Reddit API quota use and classifies upstream failures correctly. Not-found and forbidden responses are never retried, one client is reused per process, and comment expansion is bounded.
-
 ## Requirements
 ### Requirement: Not-Found and Forbidden Error Classification
-The system SHALL classify upstream Reddit "not found" responses as error code `NOT_FOUND` and "forbidden" responses as error code `FORBIDDEN`. Both SHALL be non-retryable, and these classifications SHALL take precedence over the generic `UPSTREAM_UNAVAILABLE` mapping.
+The system SHALL classify upstream Reddit "not found" responses as error code `NOT_FOUND` and "forbidden" responses as error code `FORBIDDEN`. A Reddit redirect (`prawcore.exceptions.Redirect`), which Reddit returns when a subreddit does not exist, SHALL also be classified as `NOT_FOUND`. All of these SHALL be non-retryable, and these classifications SHALL take precedence over the generic `UPSTREAM_UNAVAILABLE` mapping.
 
 #### Scenario: Nonexistent thread is not retried
 - **WHEN** fetching a thread raises `prawcore.exceptions.NotFound` and `retry_attempts` is 3
 - **THEN** the operation SHALL be attempted exactly once and SHALL fail with code `NOT_FOUND`
+
+#### Scenario: Nonexistent subreddit is not retried
+- **WHEN** a search raises `prawcore.exceptions.Redirect` and `retry_attempts` is 3
+- **THEN** the operation SHALL be attempted exactly once and SHALL fail with code `NOT_FOUND` and the message "Subreddit was not found"
 
 #### Scenario: Private subreddit returns forbidden
 - **WHEN** a search raises `prawcore.exceptions.Forbidden`
