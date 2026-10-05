@@ -61,10 +61,15 @@ MCP-specific:
 - MCP_API_TIMEOUT_SECONDS (default: REDDIT_TIMEOUT_SECONDS)
 - MCP_API_RETRY_ATTEMPTS (default: 1)
 - MCP_API_RETRY_BACKOFF_SECONDS (default: MCP_RETRY_BACKOFF_SECONDS)
+- MCP_VALIDATE_UPSTREAM_ON_STARTUP (default: 0; set to 1 to fail fast when API is unreachable)
+- MCP_TRANSPORT (optional: `stdio` or `streamable-http`; auto-selects by default)
 
 Frontend: `COMMUNITY_RESEARCH_API_URL`, read on the server when each request is handled, so changing it only needs a restart. `NEXT_PUBLIC_API_URL` is still accepted as a fallback.
 
 Startup validates required Reddit credentials in the API service.
+
+Default MCP upstream URL:
+- https://community-research.onrender.com
 
 ### Sharing Reddit credentials with other projects
 
@@ -133,8 +138,10 @@ One manual step is needed when moving the frontend to the new variable. On the `
 
 python mcp_server.py
 
-Transport path:
-- streamable-http on /mcp
+Transport behavior:
+- local command mode defaults to `stdio`
+- hosted mode defaults to `streamable-http` on `/mcp`
+- override with `MCP_TRANSPORT=stdio` or `MCP_TRANSPORT=streamable-http`
 
 ## Claude Desktop (Production)
 
@@ -154,7 +161,7 @@ Example config:
       "command": "npx",
       "args": [
         "-y",
-        "mcp-remote",
+        "mcp-remote@0.1.38",
         "https://community-research-mcp.onrender.com/mcp"
       ]
     }
@@ -165,9 +172,21 @@ Install helper script (macOS):
 
 ./install-claude-fetch-reddit.sh
 
+Optional bridge version override:
+
+MCP_REMOTE_VERSION=0.1.38 ./install-claude-fetch-reddit.sh
+
 Optional custom MCP URL:
 
 ./install-claude-fetch-reddit.sh https://community-research-mcp.onrender.com/mcp
+
+Bridge diagnostics helper (verbose `mcp-remote` logs):
+
+./scripts/diagnose-mcp-remote.sh
+
+Optional URL + version override for diagnostics:
+
+MCP_REMOTE_VERSION=0.1.38 ./scripts/diagnose-mcp-remote.sh https://community-research-mcp.onrender.com/mcp
 
 After saving config, fully quit and reopen Claude Desktop.
 

@@ -1,14 +1,16 @@
 """
-HTTP MCP server exposing Reddit research tools.
+MCP server exposing Reddit research tools.
 
-Run locally:
-    python mcp_server.py
+Run locally (Claude Desktop command server):
+        python mcp_server.py
 
-The server starts on http://0.0.0.0:8000/mcp (streamable-http transport).
+Default transport behavior:
+    - stdio when no PORT is present (local command mode)
+    - streamable-http when PORT is present (hosted/web mode)
 
 Tools exposed:
-  - fetch_thread_comments   Return all comments from a Reddit thread.
-  - search_subreddit        Search posts in a subreddit.
+    - fetch_thread_comments   Return all comments from a Reddit thread.
+    - search_subreddit        Search posts in a subreddit.
 """
 
 import os
@@ -29,6 +31,12 @@ api_base_url = os.getenv("COMMUNITY_RESEARCH_API_URL", "https://community-resear
 api_timeout_seconds = int(os.getenv("MCP_API_TIMEOUT_SECONDS", str(runtime_config.upstream_timeout_seconds)))
 api_retry_attempts = max(1, int(os.getenv("MCP_API_RETRY_ATTEMPTS", "1")))
 api_retry_backoff_seconds = float(os.getenv("MCP_API_RETRY_BACKOFF_SECONDS", str(runtime_config.retry_backoff_seconds)))
+validate_upstream_on_startup = os.getenv("MCP_VALIDATE_UPSTREAM_ON_STARTUP", "0").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+}
+configured_transport = os.getenv("MCP_TRANSPORT", "").strip().lower()
 
 mcp = FastMCP(
     name="community-research",
@@ -128,18 +136,29 @@ def _validate_api_service_configuration() -> None:
     if not api_base_url:
         raise SystemExit("Startup configuration error: COMMUNITY_RESEARCH_API_URL is required")
 
+    if not validate_upstream_on_startup:
+        return
+
     try:
         probe_response = requests.get(
-            f"{api_base_url}/api/thread",
+            f"{api_base_url}/health",
             timeout=api_timeout_seconds,
         )
     except requests.RequestException as exc:
         raise SystemExit(f"Startup dependency error: API service is unreachable at {api_base_url}: {exc}") from exc
 
-    if probe_response.status_code >= 500:
+    if probe_response.status_code >= 400:
         raise SystemExit(
             f"Startup dependency error: API service returned HTTP {probe_response.status_code} at {api_base_url}"
         )
+
+
+def _resolve_transport() -> str:
+    if configured_transport in {"stdio", "streamable-http"}:
+        return configured_transport
+
+    # Render and most hosted platforms set PORT; local command mode typically does not.
+    return "streamable-http" if os.getenv("PORT") else "stdio"
 
 
 @mcp.tool()
@@ -197,4 +216,4 @@ def search_subreddit(
 
 if __name__ == "__main__":
     _validate_api_service_configuration()
-    mcp.run(transport="streamable-http")
+    mcp.run(transport=_resolve_transport())

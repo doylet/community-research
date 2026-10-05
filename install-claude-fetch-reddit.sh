@@ -3,9 +3,10 @@ set -euo pipefail
 
 SERVER_NAME="fetch-reddit"
 MCP_URL="${1:-https://community-research-mcp.onrender.com/mcp}"
+MCP_REMOTE_VERSION="${MCP_REMOTE_VERSION:-0.1.38}"
+MCP_REMOTE_PACKAGE="${MCP_REMOTE_PACKAGE:-mcp-remote@${MCP_REMOTE_VERSION}}"
 CLAUDE_DIR="${HOME}/Library/Application Support/Claude"
 CONFIG_PATH="${CLAUDE_DIR}/claude_desktop_config.json"
-MCP_REMOTE_PACKAGE="${MCP_REMOTE_PACKAGE:-mcp-remote@0.1.37}"
 
 add_node_candidate() {
     local candidate="$1"
