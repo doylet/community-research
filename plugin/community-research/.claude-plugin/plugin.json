@@ -1,0 +1,10 @@
+{
+  "name": "community-research",
+  "version": "0.1.0",
+  "description": "Reddit community research for researchers and PMs: community pulse, thread digests, voice of customer, subreddit discovery and competitive product marketing research, backed by the Community Research MCP server.",
+  "author": {
+    "name": "Tom Doyle"
+  },
+  "homepage": "https://community-research-frontend.onrender.com",
+  "keywords": ["reddit", "research", "voice-of-customer", "competitive-intelligence", "product-marketing"]
+}
