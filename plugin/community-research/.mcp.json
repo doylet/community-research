@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "community-research": {
+      "type": "http",
+      "url": "https://community-research-mcp.onrender.com/mcp"
+    }
+  }
+}
