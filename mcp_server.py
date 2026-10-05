@@ -43,7 +43,7 @@ mcp = FastMCP(
     instructions=(
         "Tools for fetching Reddit community data. "
         "Use fetch_thread_comments to retrieve all comments from a specific thread. "
-        "Use search_subreddit to find relevant posts in a community."
+        "Use search_subreddit to find relevant posts in a community or across all of Reddit."
     ),
     host="0.0.0.0",
     port=port,
@@ -188,13 +188,14 @@ def fetch_thread_comments(
 
 @mcp.tool()
 def search_subreddit(
-    subreddit: Annotated[str, Field(description="Subreddit name without the r/ prefix, e.g. 'technology'")],
     query: Annotated[str, Field(description="Search query string")],
+    subreddit: Annotated[str, Field(description="Subreddit name without the r/ prefix, e.g. 'technology'; use 'all' to search across Reddit")] = "all",
     limit: Annotated[int, Field(description="Maximum number of posts to return (1-100)", ge=1, le=100)] = 25,
     sort: Annotated[str, Field(description="Sort order: relevance, hot, top, new, comments")] = "relevance",
 ) -> dict:
     """Search for posts in a subreddit matching a query.
 
+    The subreddit defaults to "all" to search across Reddit.
     Returns a list of dicts with keys: id, title, author, score, url, num_comments, created_utc, selftext.
     """
     try:

@@ -132,7 +132,7 @@ def api_thread_records():
 
 @main.route('/api/search_posts')
 def api_search_posts():
-    subreddit = request.args.get("subreddit", "")
+    subreddit = (request.args.get("subreddit") or "all").strip() or "all"
     query = request.args.get("query", "")
     sort = request.args.get("sort", "relevance")
 
