@@ -95,6 +95,28 @@ def test_search_route_hides_unexpected_exception_text(monkeypatch):
     assert "internal-detail-xyz" not in response.data.decode()
 
 
+@pytest.mark.parametrize("subreddit_param", [None, ""])
+def test_api_search_posts_defaults_missing_subreddit_to_all(monkeypatch, subreddit_param):
+    class RecordingSearchService:
+        def __init__(self):
+            self.search_args = None
+
+        def search_posts(self, **kwargs):
+            self.search_args = kwargs
+            return ServiceResult(data=[], retries=0)
+
+    service = RecordingSearchService()
+    query = "/api/search_posts?query=agentic"
+    if subreddit_param is not None:
+        query += f"&subreddit={subreddit_param}"
+
+    with client_with_service(monkeypatch, service) as client:
+        response = client.get(query)
+
+    assert response.status_code == 200
+    assert service.search_args["subreddit"] == "all"
+
+
 @pytest.mark.parametrize(
     ("code", "status"),
     [(ErrorCode.NOT_FOUND, 404), (ErrorCode.FORBIDDEN, 403)],

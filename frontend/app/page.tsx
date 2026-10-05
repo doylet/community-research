@@ -122,7 +122,7 @@ export default async function HomePage({
   searchParams?: Promise<SearchParams>
 }) {
   const resolvedParams = await (searchParams ?? Promise.resolve({} as SearchParams))
-  const subreddit = getStringParam(resolvedParams.subreddit, "python")
+  const subreddit = getStringParam(resolvedParams.subreddit, "all")
   const query = getStringParam(resolvedParams.query, "agentic workflows")
   const requestedSort = getStringParam(resolvedParams.sort, "top")
   const sort = VALID_SORTS.has(requestedSort) ? requestedSort : "top"
@@ -157,7 +157,7 @@ export default async function HomePage({
               name="subreddit"
               defaultValue={subreddit}
               {...fieldProps("subreddit")}
-              placeholder="python"
+              placeholder="all"
             />
           </label>
 

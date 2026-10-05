@@ -28,13 +28,35 @@ def test_fetch_thread_comments_success_envelope(monkeypatch):
 def test_search_subreddit_success_envelope(monkeypatch):
     monkeypatch.setattr(mcp_server, "_call_service", fake_call_service_success)
 
-    response = mcp_server.search_subreddit("python", "flask", 5, "relevance")
+    response = mcp_server.search_subreddit(
+        query="flask",
+        subreddit="python",
+        limit=5,
+        sort="relevance",
+    )
 
     assert response["success"] is True
     assert isinstance(response["request_id"], str)
     assert response["error"] is None
     assert isinstance(response["data"], list)
     assert response["meta"]["version"] == "v1"
+
+
+def test_search_subreddit_defaults_to_all(monkeypatch):
+    calls = {}
+
+    def capture_call(path, params):
+        calls["path"] = path
+        calls["params"] = params
+        return [{"id": "post1", "title": "Example"}], 0
+
+    monkeypatch.setattr(mcp_server, "_call_service", capture_call)
+
+    response = mcp_server.search_subreddit(query="flask")
+
+    assert response["success"] is True
+    assert calls["path"] == "/api/search_posts"
+    assert calls["params"]["subreddit"] == "all"
 
 
 def test_fetch_thread_comments_invalid_input_error(monkeypatch):
